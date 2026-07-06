@@ -1,0 +1,28 @@
+# Python
+backend/.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Environment and secrets
+.env
+
+# Data and database
+*.db
+*.db.bak
+data/raw/*.csv
+!data/raw/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.next/
+frontend/out/
+
+# Node Environment
+node/

@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spotify Review Discovery Engine - Research Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-color: #0b0c0e;
+      --card-bg: #121316;
+      --card-hover-bg: #191c21;
+      --border-color: #212429;
+      --text-color: #c9d1d9;
+      --text-light: #f0f6fc;
+      --text-muted: #8b949e;
+      --accent-color: #34d399; /* Emerald accent */
+      --accent-hover: #059669;
+      --accent-bg-muted: #064e3b;
+      --error-color: #f87171;
+      --input-bg: #16181d;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.5;
+      font-size: 13px;
+    }
+
+    /* Dashboard Layout */
+    .dashboard-container {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Sidebar Filters - Sticky */
+    aside.sidebar {
+      background-color: var(--card-bg);
+      border-right: 1px solid var(--border-color);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    @media (max-width: 1024px) {
+      aside.sidebar {
+        height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+      }
+    }
+
+    .brand {
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 5px;
+    }
+
+    .brand h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-light);
+      letter-spacing: -0.3px;
+    }
+
+    .brand h2 span {
+      color: var(--accent-color);
+    }
+
+    .brand p {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .filter-group label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    input, select {
+      background-color: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      color: var(--text-light);
+      padding: 7px 10px;
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.15s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent-color);
+    }
+
+    .date-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .sidebar-actions {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.15s, opacity 0.15s;
+    }
+
+    .btn-accent {
+      background-color: var(--accent-color);
+      color: #0d0f12;
+    }
+
+    .btn-accent:hover {
+      background-color: #2bb582;
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+    }
+
+    .btn-outline:hover {
+      background-color: var(--card-hover-bg);
+      color: var(--text-light);
+    }
+
+    /* Main Area */
+    main.main-content {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      max-width: 1300px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* Top KPI summary */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .kpi-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .kpi-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .kpi-card:hover {
+      border-color: var(--accent-color);
+    }
+
+    .kpi-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .kpi-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-light);
+      font-family: var(--font-mono);
+    }
+
+    .kpi-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Section Headers */
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-light);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Insights Panels Grid */
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .insights-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .insight-panel {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .insight-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .insight-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      background-color: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.15s, border-color 0.15s;
+    }
+
+    .insight-item:hover {
+      background-color: var(--card-hover-bg);
+      border-color: var(--accent-color);
+    }
+
+    .insight-name {
+      font-weight: 500;
+      color: var(--text-color);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 75%;
+    }
+
+    .insight-count {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background-color: var(--border-color);
+      color: var(--text-muted);
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+
+    .insight-item:hover .insight-count {
+      background-color: var(--accent-bg-muted);
+      color: var(--accent-color);
+    }
+
+    /* Cross Source Comparison Panel */
+    .compare-panel {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 16px;
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .compare-table th, .compare-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .compare-table th {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .compare-table td.cell-value {
+      font-family: var(--font-mono);
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+
+    .compare-table td.cell-value:hover {
+      background-color: var(--card-hover-bg);
+      color: var(--accent-color);
+    }
+
+    /* Evidence Explorer section */
+    .evidence-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .evidence-summary-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    /* Active Drill Down Theme Banner */
+    .drilldown-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--accent-bg-muted);
+      border: 1px solid var(--accent-color);
+      padding: 10px 14px;
+      border-radius: 6px;
+      color: var(--text-light);
+    }
+
+    .drilldown-banner h4 {
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .drilldown-banner h4 span {
+      background-color: var(--accent-color);
+      color: #000;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .btn-clear-drilldown {
+      font-size: 11px;
+      padding: 4px 10px;
+    }
+
+    .evidence-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .evidence-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .evidence-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .evidence-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-light);
+    }
+
+    .evidence-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-primary {
+      background-color: #212836;
+      color: #58a6ff;
+    }
+
+    .badge-secondary {
+      background-color: #382419;
+      color: #f0883e;
+    }
+
+    .badge-accent {
+      background-color: #1e3a2f;
+      color: var(--accent-color);
+    }
+
+    .badge-sentiment-pos {
+      background-color: #123d24;
+      color: #34d399;
+    }
+
+    .badge-sentiment-neu {
+      background-color: #2e3035;
+      color: #9ba3af;
+    }
+
+    .badge-sentiment-neg {
+      background-color: #4c1d1d;
+      color: #f87171;
+    }
+
+    .evidence-body {
+      font-size: 13px;
+      color: var(--text-color);
+    }
+
+    .evidence-quote-box {
+      border-left: 2px solid var(--accent-color);
+      background-color: #101a18;
+      padding: 8px 12px;
+      font-style: italic;
+      color: var(--text-light);
+      margin-bottom: 6px;
+    }
+
+    .evidence-quote-box span.quote-label {
+      display: block;
+      font-size: 9px;
+      font-family: var(--font-mono);
+      color: var(--accent-color);
+      font-style: normal;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .evidence-details-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 10px;
+      background-color: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .details-item span {
+      display: block;
+      color: var(--text-muted);
+      font-size: 9px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .details-item p {
+      color: var(--text-light);
+      word-break: break-all;
+    }
+
+    .evidence-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-color);
+      padding-top: 8px;
+    }
+
+    .source-link {
+      color: var(--accent-color);
+      text-decoration: none;
+    }
+
+    .source-link:hover {
+      text-decoration: underline;
+    }
+
+    /* States */
+    .state-panel {
+      padding: 40px 20px;
+      text-align: center;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-muted);
+    }
+
+    .state-panel h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-light);
+      margin-bottom: 6px;
+    }
+
+    .spinner {
+      margin: 0 auto 12px auto;
+      width: 24px;
+      height: 24px;
+      border: 3px solid var(--border-color);
+      border-top-color: var(--accent-color);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .btn-retry {
+      font-size: 11px;
+      margin-top: 10px;
+      padding: 4px 10px;
+    }
+
+    .pagination-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .pagination-controls {
+      display: flex;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard-container">
+    
+    <!-- Left Sidebar: Filter Panel -->
+    <aside class="sidebar">
+      <div class="brand">
+        <h2><span>Spotify</span> Discovery Engine</h2>
+        <p>PM Feedback Analysis Dashboard</p>
+      </div>
+
+      <!-- Search Input -->
+      <div class="filter-group">
+        <label for="q-input">Keyword Search</label>
+        <input type="text" id="q-input" placeholder="Type and hit Enter...">
+      </div>
+
+      <!-- Source Type -->
+      <div class="filter-group">
+        <label for="source-type-select">Source Type</label>
+        <select id="source-type-select">
+          <option value="">All Sources</option>
+          <option value="app_review">Spotify Reviews CSV</option>
+          <option value="producthunt_post">Product Hunt Post (GraphQL API)</option>
+          <option value="producthunt_comment">Product Hunt Comment (GraphQL API)</option>
+          <option value="youtube_video">YouTube Video (Data API)</option>
+          <option value="youtube_comment">YouTube Comment (Data API)</option>
+        </select>
+      </div>
+
+      <!-- Platform -->
+      <div class="filter-group">
+        <label for="platform-select">Platform</label>
+        <select id="platform-select">
+          <option value="">All Platforms</option>
+          <option value="app_store">Spotify App Store (CSV)</option>
+          <option value="play_store">Spotify Play Store (CSV)</option>
+          <option value="product_hunt">Product Hunt (GraphQL API)</option>
+          <option value="youtube">YouTube (Data API)</option>
+        </select>
+      </div>
+
+      <!-- Sentiment -->
+      <div class="filter-group">
+        <label for="sentiment-select">Sentiment</label>
+        <select id="sentiment-select">
+          <option value="">All Sentiments</option>
+          <option value="positive">Positive</option>
+          <option value="neutral">Neutral</option>
+          <option value="negative">Negative</option>
+          <option value="unknown">Unknown</option>
+        </select>
+      </div>
+
+      <!-- Issue Category -->
+      <div class="filter-group">
+        <label for="category-select">Issue Category</label>
+        <select id="category-select">
+          <option value="">All Categories</option>
+          <option value="crashes_and_bugs">Crashes &amp; Bugs</option>
+          <option value="ui_ux_design">UI/UX Design</option>
+          <option value="recommendation_algorithm">Recommendation Algorithm</option>
+          <option value="pricing_and_billing">Pricing &amp; Billing</option>
+          <option value="content_availability">Content Availability</option>
+          <option value="performance">Performance</option>
+          <option value="general_feedback">General Feedback</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <!-- Topic -->
+      <div class="filter-group">
+        <label for="topic-input">Topic / Theme</label>
+        <input type="text" id="topic-input" placeholder="e.g. lyrics_feature">
+      </div>
+
+      <!-- User Segment -->
+      <div class="filter-group">
+        <label for="segment-select">User Segment</label>
+        <select id="segment-select">
+          <option value="">All Segments</option>
+          <option value="premium_subscriber">Premium Subscriber</option>
+          <option value="free_tier">Free Tier</option>
+          <option value="artist">Artist</option>
+          <option value="podcast_listener">Podcast Listener</option>
+          <option value="unknown">Unknown Segment</option>
+        </select>
+      </div>
+
+      <!-- Date range -->
+      <div class="filter-group">
+        <label>Date Range</label>
+        <div class="date-inputs">
+          <input type="date" id="from-date-input">
+          <input type="date" id="to-date-input">
+        </div>
+      </div>
+
+      <!-- Sidebar actions -->
+      <div class="sidebar-actions">
+        <button id="apply-filters-btn" class="btn-accent">Apply Filters</button>
+        <button id="reset-filters-btn" class="btn-outline">Reset All</button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- 1. KPI Row -->
+      <div id="kpi-panel">
+        <div class="kpi-row">
+          <div class="kpi-card" onclick="setFilter('sentiment', '')">
+            <span class="kpi-label">Analyzed Feedback</span>
+            <div class="kpi-value" id="kpi-total-analyzed">-</div>
+            <span class="kpi-meta" id="kpi-total-source-split">Loading...</span>
+          </div>
+          <div class="kpi-card" onclick="setFilter('sentiment', 'negative')">
+            <span class="kpi-label">Negative Sentiment</span>
+            <div class="kpi-value" id="kpi-negative-count">-</div>
+            <span class="kpi-meta" id="kpi-negative-percentage">Loading...</span>
+          </div>
+          <div class="kpi-card" onclick="setFilter('sentiment', 'positive')">
+            <span class="kpi-label">Positive Sentiment</span>
+            <div class="kpi-value" id="kpi-positive-count">-</div>
+            <span class="kpi-meta" id="kpi-positive-percentage">Loading...</span>
+          </div>
+          <div class="kpi-card" id="kpi-top-category-card">
+            <span class="kpi-label">Top Loop Cause</span>
+            <div class="kpi-value" id="kpi-top-category" style="font-size: 14px; padding-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</div>
+            <span class="kpi-meta" id="kpi-top-category-count">Loading...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Insights Grid -->
+      <div>
+        <h3 class="section-title">AI Insight Summaries</h3>
+        <div class="insights-grid">
+          <!-- Topics (Discovery/Recommendation Pain Points) -->
+          <div class="insight-panel" id="topics-panel">
+            <h4 style="font-size: 12px; font-weight: 600; color: var(--text-light); margin-bottom: 12px; text-transform: uppercase;">Discovery &amp; Algorithm Pain Points</h4>
+            <div class="insight-list" id="topics-list"></div>
+          </div>
+
+          <!-- Unmet Needs & Feature Requests -->
+          <div class="insight-panel" id="needs-panel">
+            <h4 style="font-size: 12px; font-weight: 600; color: var(--text-light); margin-bottom: 12px; text-transform: uppercase;">Unmet Needs &amp; Feature Requests</h4>
+            <div class="insight-list" id="needs-list"></div>
+          </div>
+
+          <!-- User Segments -->
+          <div class="insight-panel" id="segments-panel">
+            <h4 style="font-size: 12px; font-weight: 600; color: var(--text-light); margin-bottom: 12px; text-transform: uppercase;">User Segments &amp; Personas</h4>
+            <div class="insight-list" id="segments-list"></div>
+          </div>
+
+          <!-- Issue Categories -->
+          <div class="insight-panel" id="categories-panel">
+            <h4 style="font-size: 12px; font-weight: 600; color: var(--text-light); margin-bottom: 12px; text-transform: uppercase;">Loop Causes &amp; Categories</h4>
+            <div class="insight-list" id="categories-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Cross Source Comparison -->
+      <div class="compare-panel" id="compare-panel">
+        <h3 class="section-title">Cross-Source Category Comparison</h3>
+        <div style="overflow-x: auto;" id="compare-table-container">
+          <!-- Dynamic comparison table -->
+        </div>
+      </div>
+
+      <!-- 4. Evidence Explorer -->
+      <div class="evidence-panel">
+        <h3 class="section-title">Evidence Explorer</h3>
+        
+        <!-- Active Drill down view banner -->
+        <div id="drilldown-status" class="drilldown-banner" style="display: none;">
+          <h4>Drill-down Theme: <span id="drilldown-theme-name">None</span></h4>
+          <button id="clear-drilldown-btn" class="btn-accent btn-clear-drilldown">Close Drill-down View</button>
+        </div>
+
+        <div class="evidence-summary-bar">
+          <span id="evidence-count">Showing 0-0 of 0 feedback items</span>
+        </div>
+
+        <!-- Evidence List -->
+        <div id="evidence-list" class="evidence-list">
+          <!-- Dynamic Feedback Cards -->
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-bar">
+          <div></div> <!-- Spacer -->
+          <div class="pagination-controls">
+            <button id="prev-btn" class="btn-outline" disabled>Previous</button>
+            <button id="next-btn" class="btn-outline" disabled>Next</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <script>
+    // State management
+    const state = {
+      page: 1,
+      perPage: 10,
+      total: 0,
+      drilldownTheme: null
+    };
+
+    // DOM Elements
+    const elements = {
+      q: document.getElementById('q-input'),
+      sourceType: document.getElementById('source-type-select'),
+      platform: document.getElementById('platform-select'),
+      sentiment: document.getElementById('sentiment-select'),
+      category: document.getElementById('category-select'),
+      topic: document.getElementById('topic-input'),
+      segment: document.getElementById('segment-select'),
+      fromDate: document.getElementById('from-date-input'),
+      toDate: document.getElementById('to-date-input'),
+
+      applyFiltersBtn: document.getElementById('apply-filters-btn'),
+      resetFiltersBtn: document.getElementById('reset-filters-btn'),
+      prevBtn: document.getElementById('prev-btn'),
+      nextBtn: document.getElementById('next-btn'),
+
+      evidenceList: document.getElementById('evidence-list'),
+      evidenceCount: document.getElementById('evidence-count'),
+
+      // KPI elements
+      kpiPanel: document.getElementById('kpi-panel'),
+      kpiTotalAnalyzed: document.getElementById('kpi-total-analyzed'),
+      kpiTotalSourceSplit: document.getElementById('kpi-total-source-split'),
+      kpiNegativeCount: document.getElementById('kpi-negative-count'),
+      kpiNegativePercentage: document.getElementById('kpi-negative-percentage'),
+      kpiPositiveCount: document.getElementById('kpi-positive-count'),
+      kpiPositivePercentage: document.getElementById('kpi-positive-percentage'),
+      kpiTopCategory: document.getElementById('kpi-top-category'),
+      kpiTopCategoryCount: document.getElementById('kpi-top-category-count'),
+      kpiTopCategoryCard: document.getElementById('kpi-top-category-card'),
+
+      // Lists
+      topicsList: document.getElementById('topics-list'),
+      needsList: document.getElementById('needs-list'),
+      segmentsList: document.getElementById('segments-list'),
+      categoriesList: document.getElementById('categories-list'),
+
+      // Comparison table
+      compareContainer: document.getElementById('compare-table-container'),
+
+      // Drilldown elements
+      drilldownStatus: document.getElementById('drilldown-status'),
+      drilldownThemeName: document.getElementById('drilldown-theme-name'),
+      clearDrilldownBtn: document.getElementById('clear-drilldown-btn')
+    };
+
+    const kpiPanelHTML = elements.kpiPanel.innerHTML;
+
+    // 1. Initial Load and URL State sync
+    function getFiltersFromUI() {
+      const filters = {};
+      if (elements.q.value.trim()) filters.q = elements.q.value.trim();
+      if (elements.sourceType.value) filters.source_type = elements.sourceType.value;
+      if (elements.platform.value) filters.platform = elements.platform.value;
+      if (elements.sentiment.value) filters.sentiment = elements.sentiment.value;
+      if (elements.category.value) filters.issue_category = elements.category.value;
+      if (elements.topic.value.trim()) filters.topic = elements.topic.value.trim();
+      if (elements.segment.value.trim()) filters.user_segment = elements.segment.value.trim();
+      if (elements.fromDate.value) filters.from_date = elements.fromDate.value;
+      if (elements.toDate.value) filters.to_date = elements.toDate.value;
+      return filters;
+    }
+
+    function saveFiltersToURL() {
+      const filters = getFiltersFromUI();
+      const params = new URLSearchParams();
+      for (const [key, val] of Object.entries(filters)) {
+        params.append(key, val);
+      }
+      if (state.drilldownTheme) {
+        params.append('drilldown', state.drilldownTheme);
+      }
+      params.append('page', state.page);
+      
+      const newURL = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState(null, '', newURL);
+    }
+
+    function loadFiltersFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('q')) elements.q.value = params.get('q');
+      if (params.has('source_type')) elements.sourceType.value = params.get('source_type');
+      if (params.has('platform')) elements.platform.value = params.get('platform');
+      if (params.has('sentiment')) elements.sentiment.value = params.get('sentiment');
+      if (params.has('issue_category')) elements.category.value = params.get('issue_category');
+      if (params.has('topic')) elements.topic.value = params.get('topic');
+      if (params.has('user_segment')) elements.segment.value = params.get('user_segment');
+      if (params.has('from_date')) elements.fromDate.value = params.get('from_date');
+      if (params.has('to_date')) elements.toDate.value = params.get('to_date');
+      if (params.has('drilldown')) state.drilldownTheme = params.get('drilldown');
+      if (params.has('page')) state.page = parseInt(params.get('page')) || 1;
+    }
+
+    // Set filter directly from card click
+    function setFilter(key, value) {
+      if (key === 'sentiment') elements.sentiment.value = value;
+      if (key === 'issue_category') elements.category.value = value;
+      if (key === 'topic') elements.topic.value = value;
+      if (key === 'user_segment') elements.segment.value = value;
+      if (key === 'source_type') elements.sourceType.value = value;
+      
+      state.drilldownTheme = null; // Clear drilldown when applying general filters
+      state.page = 1;
+      saveFiltersToURL();
+      renderDrilldownBanner();
+      refreshDashboard();
+    }
+
+    // Drilldown view for theme evidence
+    function setDrilldownTheme(theme) {
+      state.drilldownTheme = theme;
+      state.page = 1;
+      saveFiltersToURL();
+      renderDrilldownBanner();
+      fetchEvidence();
+    }
+
+    function clearDrilldown() {
+      state.drilldownTheme = null;
+      saveFiltersToURL();
+      renderDrilldownBanner();
+      fetchEvidence();
+    }
+
+    function renderDrilldownBanner() {
+      if (state.drilldownTheme) {
+        elements.drilldownThemeName.textContent = state.drilldownTheme;
+        elements.drilldownStatus.style.display = 'flex';
+      } else {
+        elements.drilldownStatus.style.display = 'none';
+      }
+    }
+
+    // Render loading placeholders inside a specific element
+    function renderLoading(container, text = "Loading...") {
+      container.innerHTML = `
+        <div class="state-panel">
+          <div class="spinner"></div>
+          <p>${text}</p>
+        </div>
+      `;
+    }
+
+    // Render error placeholder
+    function renderError(container, message, retryCallback) {
+      container.innerHTML = `
+        <div class="state-panel">
+          <h3 class="state-error" style="color:var(--error-color);">Error Loading Data</h3>
+          <p style="font-size:12px; margin-top:4px;">${message}</p>
+          <button class="btn-outline btn-retry" id="${container.id}-retry-btn">Retry</button>
+        </div>
+      `;
+      const retryBtn = document.getElementById(`${container.id}-retry-btn`);
+      if (retryBtn && retryCallback) {
+        retryBtn.addEventListener('click', retryCallback);
+      }
+    }
+
+    // Render empty placeholder
+    function renderEmpty(container, title = "No data available", subtitle = "Try adjusting filters") {
+      container.innerHTML = `
+        <div class="state-panel">
+          <h3>${title}</h3>
+          <p style="font-size:12px; margin-top:4px;">${subtitle}</p>
+        </div>
+      `;
+    }
+
+    // Helper to safely render text
+    function escapeHTML(str) {
+      if (!str) return '';
+      return str.replace(/[&<>'"]/g, 
+        tag => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        }[tag] || tag)
+      );
+    }
+
+    // 2. Fetch and render KPIs
+    async function fetchKPIs() {
+      // Restore original HTML cards so we have the elements to update
+      elements.kpiPanel.innerHTML = kpiPanelHTML;
+      // Re-assign nested elements
+      elements.kpiTotalAnalyzed = document.getElementById('kpi-total-analyzed');
+      elements.kpiTotalSourceSplit = document.getElementById('kpi-total-source-split');
+      elements.kpiNegativeCount = document.getElementById('kpi-negative-count');
+      elements.kpiNegativePercentage = document.getElementById('kpi-negative-percentage');
+      elements.kpiPositiveCount = document.getElementById('kpi-positive-count');
+      elements.kpiPositivePercentage = document.getElementById('kpi-positive-percentage');
+      elements.kpiTopCategory = document.getElementById('kpi-top-category');
+      elements.kpiTopCategoryCount = document.getElementById('kpi-top-category-count');
+      elements.kpiTopCategoryCard = document.getElementById('kpi-top-category-card');
+
+      elements.kpiTotalAnalyzed.textContent = '...';
+      elements.kpiNegativeCount.textContent = '...';
+      elements.kpiPositiveCount.textContent = '...';
+      elements.kpiTopCategory.textContent = '...';
+
+      try {
+        const response = await fetch('/insights/summary');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        
+        const total = data.total_analyzed || 0;
+        
+        // Total Analyzed
+        elements.kpiTotalAnalyzed.textContent = total;
+        elements.kpiTotalSourceSplit.textContent = "Across platforms";
+        
+        // Fetch sentiment counts
+        await fetchSentimentKPIs();
+
+        // Top Category Loop Cause
+        if (data.top_categories && data.top_categories.length > 0) {
+          const topCat = data.top_categories[0];
+          elements.kpiTopCategory.textContent = topCat.name.replace(/_/g, ' ');
+          elements.kpiTopCategoryCount.textContent = `${topCat.count} items`;
+          elements.kpiTopCategoryCard.onclick = () => setFilter('issue_category', topCat.name);
+        } else {
+          elements.kpiTopCategory.textContent = '-';
+          elements.kpiTopCategoryCount.textContent = "No data";
+          elements.kpiTopCategoryCard.onclick = null;
+        }
+
+      } catch (err) {
+        console.error(err);
+        renderError(elements.kpiPanel, err.message || "Failed to load KPIs.", fetchKPIs);
+      }
+    }
+
+    async function fetchSentimentKPIs() {
+      try {
+        const [posRes, negRes, allRes] = await Promise.all([
+          fetch('/feedback?sentiment=positive&per_page=1'),
+          fetch('/feedback?sentiment=negative&per_page=1'),
+          fetch('/feedback?per_page=1')
+        ]);
+        
+        const posData = posRes.ok ? await posRes.json() : { total: 0 };
+        const negData = negRes.ok ? await negRes.json() : { total: 0 };
+        const allData = allRes.ok ? await allRes.json() : { total: 0 };
+
+        const posVal = posData.total || 0;
+        const negVal = negData.total || 0;
+        const totalVal = allData.total || 0;
+        
+        elements.kpiPositiveCount.textContent = posVal;
+        const posPct = totalVal > 0 ? Math.round((posVal / totalVal) * 100) : 0;
+        elements.kpiPositivePercentage.textContent = `${posPct}% of total`;
+
+        elements.kpiNegativeCount.textContent = negVal;
+        const negPct = totalVal > 0 ? Math.round((negVal / totalVal) * 100) : 0;
+        elements.kpiNegativePercentage.textContent = `${negPct}% of total`;
+
+      } catch (err) {
+        console.error("Failed to fetch sentiment KPIs:", err);
+        elements.kpiPositiveCount.textContent = '-';
+        elements.kpiPositivePercentage.textContent = 'Error';
+        elements.kpiNegativeCount.textContent = '-';
+        elements.kpiNegativePercentage.textContent = 'Error';
+      }
+    }
+
+    // 3. Fetch and render Insight lists
+    async function fetchInsightsLists() {
+      renderLoading(elements.topicsList);
+      renderLoading(elements.needsList);
+      renderLoading(elements.segmentsList);
+      renderLoading(elements.categoriesList);
+
+      try {
+        const response = await fetch('/insights/summary');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+
+        // 1. Render Topics (Pain Points)
+        renderInsightList(elements.topicsList, data.top_topics, 'topic', 'topic');
+        
+        // 2. Render Unmet Needs
+        renderInsightList(elements.needsList, data.top_unmet_needs, 'topic', 'unmet_need');
+
+        // 3. Render Segments
+        renderInsightList(elements.segmentsList, data.top_segments, 'user_segment');
+
+        // 4. Render Categories
+        renderInsightList(elements.categoriesList, data.top_categories, 'issue_category');
+
+      } catch (err) {
+        console.error(err);
+        const msg = err.message || "Failed to load insight lists.";
+        renderError(elements.topicsList, msg, fetchInsightsLists);
+        renderError(elements.needsList, msg, fetchInsightsLists);
+        renderError(elements.segmentsList, msg, fetchInsightsLists);
+        renderError(elements.categoriesList, msg, fetchInsightsLists);
+      }
+    }
+
+    function renderInsightList(container, items, filterKey, drilldownType) {
+      container.innerHTML = '';
+      if (!items || items.length === 0) {
+        renderEmpty(container, "No metrics surfaced", "Perform more runs to populate");
+        return;
+      }
+
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'insight-item';
+        if (drilldownType) {
+          div.onclick = () => setDrilldownTheme(item.name);
+        } else {
+          div.onclick = () => setFilter(filterKey, item.name);
+        }
+
+        const displayName = item.name.replace(/_/g, ' ');
+        div.innerHTML = `
+          <span class="insight-name" title="${escapeHTML(item.name)}">${escapeHTML(displayName)}</span>
+          <span class="insight-count">${item.count}</span>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // 4. Fetch and render Cross-Source Category Comparison
+    async function fetchComparisonTable() {
+      renderLoading(elements.compareContainer, "Building comparison matrix...");
+
+      try {
+        const response = await fetch('/insights/compare?compare_by=source_type');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+
+        const comparison = data.comparison || {};
+        
+        // Find all categories dynamically across the cells to build rows
+        const categories = new Set();
+        for (const [source, catCounts] of Object.entries(comparison)) {
+          for (const cat of Object.keys(catCounts)) {
+            categories.add(cat);
+          }
+        }
+
+        if (categories.size === 0) {
+          renderEmpty(elements.compareContainer, "No comparison data available", "Ingested records require AI labels first.");
+          return;
+        }
+
+        // Render Table
+        let html = `
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Spotify Reviews (CSV)</th>
+                <th>Product Hunt (GraphQL API)</th>
+                <th>YouTube (Data API)</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        Array.from(categories).sort().forEach(cat => {
+          const displayCatName = cat.replace(/_/g, ' ');
+          const spotifyCount = comparison['app_review']?.[cat] || 0;
+          const phCount = (comparison['producthunt_post']?.[cat] || 0) + (comparison['producthunt_comment']?.[cat] || 0);
+          const ytCount = (comparison['youtube_video']?.[cat] || 0) + (comparison['youtube_comment']?.[cat] || 0);
+
+          html += `
+            <tr>
+              <td style="font-weight: 500;">${escapeHTML(displayCatName)}</td>
+              <td class="cell-value" onclick="setCellFilter('source_type', 'app_review', '${escapeHTML(cat)}')">
+                ${spotifyCount > 0 ? spotifyCount : '-'}
+              </td>
+              <td class="cell-value" onclick="setCellFilter('platform', 'product_hunt', '${escapeHTML(cat)}')">
+                ${phCount > 0 ? phCount : '-'}
+              </td>
+              <td class="cell-value" onclick="setCellFilter('platform', 'youtube', '${escapeHTML(cat)}')">
+                ${ytCount > 0 ? ytCount : '-'}
+              </td>
+            </tr>
+          `;
+        });
+
+        html += `
+            </tbody>
+          </table>
+        `;
+        elements.compareContainer.innerHTML = html;
+
+      } catch (err) {
+        console.error(err);
+        renderError(elements.compareContainer, err.message || "Failed to query compare service.", fetchComparisonTable);
+      }
+    }
+
+    function setCellFilter(filterType, filterValue, category) {
+      // Clear filters first
+      elements.sourceType.value = '';
+      elements.platform.value = '';
+      
+      if (filterType === 'source_type') {
+        elements.sourceType.value = filterValue;
+      } else if (filterType === 'platform') {
+        elements.platform.value = filterValue;
+      }
+      elements.category.value = category;
+      state.drilldownTheme = null;
+      state.page = 1;
+      saveFiltersToURL();
+      renderDrilldownBanner();
+      refreshDashboard();
+    }
+
+    // 5. Fetch and render Evidence Feed (GET /feedback or GET /insights/{theme}/evidence)
+    async function fetchEvidence() {
+      renderLoading(elements.evidenceList, "Loading evidence feed...");
+      
+      const queryParams = getFiltersFromUI();
+      const urlParams = new URLSearchParams();
+      
+      // Pagination mapping
+      urlParams.append('page', state.page);
+      urlParams.append('per_page', state.perPage);
+
+      for (const [key, val] of Object.entries(queryParams)) {
+        if (val !== undefined && val !== null) {
+          urlParams.append(key, val);
+        }
+      }
+
+      // Check if we are running in general Explorer mode or drilldown Theme mode
+      let endpoint = `/feedback?${urlParams.toString()}`;
+      if (state.drilldownTheme) {
+        endpoint = `/insights/${state.drilldownTheme}/evidence`;
+      }
+
+      try {
+        const response = await fetch(endpoint);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+
+        let items = [];
+        let totalCount = 0;
+
+        if (state.drilldownTheme) {
+          // Drilldown theme returns flat list of EvidenceItemResponse objects
+          items = data || [];
+          totalCount = items.length;
+        } else {
+          // General feed returns FeedbackItemListResponse
+          items = data.items || [];
+          totalCount = data.total || 0;
+        }
+
+        state.total = totalCount;
+        renderEvidenceCards(items);
+
+      } catch (err) {
+        console.error(err);
+        renderError(elements.evidenceList, err.message || "Failed to load evidence cards.", fetchEvidence);
+      }
+    }
+
+    function renderEvidenceCards(items) {
+      elements.evidenceList.innerHTML = '';
+      
+      if (!items || items.length === 0) {
+        renderEmpty(elements.evidenceList, "No evidence matches found", "Try relaxing your filters or select another category.");
+        elements.evidenceCount.textContent = "Showing 0-0 of 0 feedback items";
+        updatePaginationButtons();
+        return;
+      }
+
+      // Pagination summary count
+      if (state.drilldownTheme) {
+        elements.evidenceCount.textContent = `Showing all ${items.length} supporting evidence quotes matching this theme`;
+      } else {
+        const start = (state.page - 1) * state.perPage + 1;
+        const end = Math.min(state.page * state.perPage, state.total);
+        elements.evidenceCount.textContent = `Showing ${start}-${end} of ${state.total} feedback items`;
+      }
+
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'evidence-card';
+
+        // Extract metadata values
+        const isEvidenceResponse = !!state.drilldownTheme;
+        const quote = isEvidenceResponse ? item.quote : null;
+        
+        let dateStr = 'Unknown Date';
+        const rawDate = item.created_at || item.review_date;
+        if (rawDate) {
+          dateStr = new Date(rawDate).toLocaleDateString(undefined, { 
+            year: 'numeric', month: 'short', day: 'numeric' 
+          });
+        }
+
+        const ratingVal = item.rating_or_score || item.rating;
+        const ratingDisplay = ratingVal !== undefined && ratingVal !== null ? `${ratingVal} ★` : '';
+
+        // Sentiment badge class
+        const sent = item.sentiment ? item.sentiment.toLowerCase() : 'unknown';
+        const sentClass = sent === 'positive' ? 'badge-sentiment-pos' : 
+                          sent === 'negative' ? 'badge-sentiment-neg' : 'badge-sentiment-neu';
+
+        // Badges
+        let badgesHtml = `
+          <span class="badge badge-primary">${escapeHTML(item.source_type || 'feedback')}</span>
+          <span class="badge badge-secondary">${escapeHTML(item.platform || 'api')}</span>
+        `;
+        if (ratingDisplay) {
+          badgesHtml += `<span class="badge badge-secondary" style="color:#ffd700;">${ratingDisplay}</span>`;
+        }
+        if (item.sentiment) {
+          badgesHtml += `<span class="badge ${sentClass}">${sent}</span>`;
+        }
+        if (item.issue_category) {
+          badgesHtml += `<span class="badge badge-accent">${escapeHTML(item.issue_category.replace(/_/g, ' '))}</span>`;
+        }
+
+        // Analysis details (Topics, needs, loop cause)
+        let detailsHtml = '';
+        if (item.issue_category || item.topics || item.unmet_needs) {
+          let parsedTopics = [];
+          let parsedNeeds = [];
+          try {
+            if (item.topics) parsedTopics = typeof item.topics === 'string' ? JSON.parse(item.topics) : item.topics;
+          } catch(e) { parsedTopics = [item.topics]; }
+          try {
+            if (item.unmet_needs) parsedNeeds = typeof item.unmet_needs === 'string' ? JSON.parse(item.unmet_needs) : item.unmet_needs;
+          } catch(e) { parsedNeeds = [item.unmet_needs]; }
+
+          // Clean fallback if they are simple lists
+          if (!Array.isArray(parsedTopics)) parsedTopics = [];
+          if (!Array.isArray(parsedNeeds)) parsedNeeds = [];
+
+          detailsHtml = `
+            <div class="evidence-details-grid">
+              <div class="details-item">
+                <span>Loop Cause / Category</span>
+                <p>${escapeHTML(item.issue_category ? item.issue_category.replace(/_/g, ' ') : 'None')}</p>
+              </div>
+              <div class="details-item">
+                <span>Topics Surfaced</span>
+                <p>${parsedTopics.length > 0 ? parsedTopics.map(t => escapeHTML(t)).join(', ') : 'None'}</p>
+              </div>
+              <div class="details-item">
+                <span>Unmet Needs</span>
+                <p>${parsedNeeds.length > 0 ? parsedNeeds.map(n => escapeHTML(n)).join(', ') : 'None'}</p>
+              </div>
+            </div>
+          `;
+        }
+
+        // Snippet excerpt / quote box
+        let quoteBoxHtml = '';
+        if (quote) {
+          quoteBoxHtml = `
+            <div class="evidence-quote-box">
+              <span class="quote-label">AI Highlighted Evidence Snippet</span>
+              "${escapeHTML(quote)}"
+            </div>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="evidence-header">
+            <h4 class="evidence-title">${escapeHTML(item.title || 'User Feedback')}</h4>
+            <div class="evidence-badges">${badgesHtml}</div>
+          </div>
+          ${quoteBoxHtml}
+          <p class="evidence-body">${escapeHTML(item.text)}</p>
+          ${detailsHtml}
+          <div class="evidence-footer">
+            <span>By <span style="font-weight:600; color:var(--text-light);">${escapeHTML(item.author || 'Anonymous')}</span> | ${dateStr}</span>
+            ${item.url ? `<a href="${item.url}" target="_blank" class="source-link">Source Context ↗</a>` : ''}
+          </div>
+        `;
+        elements.evidenceList.appendChild(card);
+      });
+
+      updatePaginationButtons();
+    }
+
+    function updatePaginationButtons() {
+      if (state.drilldownTheme) {
+        // No pagination in drilldown mode (shows all matched items)
+        elements.prevBtn.disabled = true;
+        elements.nextBtn.disabled = true;
+      } else {
+        elements.prevBtn.disabled = (state.page === 1);
+        elements.nextBtn.disabled = (state.page * state.perPage >= state.total);
+      }
+    }
+
+    // 6. Global orchestrator
+    function refreshDashboard() {
+      fetchKPIs();
+      fetchInsightsLists();
+      fetchComparisonTable();
+      fetchEvidence();
+    }
+
+    // Event listeners
+    elements.applyFiltersBtn.addEventListener('click', () => {
+      state.drilldownTheme = null; // Clear drilldown on manual filter apply
+      state.page = 1;
+      saveFiltersToURL();
+      renderDrilldownBanner();
+      refreshDashboard();
+    });
+
+    elements.resetFiltersBtn.addEventListener('click', () => {
+      elements.q.value = '';
+      elements.sourceType.value = '';
+      elements.platform.value = '';
+      elements.sentiment.value = '';
+      elements.category.value = '';
+      elements.topic.value = '';
+      elements.segment.value = '';
+      elements.fromDate.value = '';
+      elements.toDate.value = '';
+      state.drilldownTheme = null;
+      state.page = 1;
+      saveFiltersToURL();
+      renderDrilldownBanner();
+      refreshDashboard();
+    });
+
+    elements.clearDrilldownBtn.addEventListener('click', clearDrilldown);
+
+    elements.prevBtn.addEventListener('click', () => {
+      if (state.page > 1) {
+        state.page--;
+        saveFiltersToURL();
+        fetchEvidence();
+      }
+    });
+
+    elements.nextBtn.addEventListener('click', () => {
+      if (state.page * state.perPage < state.total) {
+        state.page++;
+        saveFiltersToURL();
+        fetchEvidence();
+      }
+    });
+
+    // Handle hit Enter on text inputs
+    const inputsToTriggerSearch = [elements.q, elements.topic];
+    inputsToTriggerSearch.forEach(input => {
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          state.drilldownTheme = null;
+          state.page = 1;
+          saveFiltersToURL();
+          renderDrilldownBanner();
+          refreshDashboard();
+        }
+      });
+    });
+
+    // Initialize
+    loadFiltersFromURL();
+    renderDrilldownBanner();
+    refreshDashboard();
+  </script>
+</body>
+</html>

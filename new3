@@ -1,0 +1,303 @@
+# import os
+# import re
+# import json
+# import time
+# import signal
+# from datetime import datetime
+# from pathlib import Path
+
+# import pandas as pd
+# from google_play_scraper import reviews, Sort
+
+# APP_ID = "com.spotify.music"
+# LANG = "en"
+# COUNTRY = "us"
+# BATCH_SIZE = 150
+# SAVE_EVERY = 200
+# TARGET_PER_THEME = 1000
+
+# desktop = Path.home() / "Desktop"
+# desktop.mkdir(parents=True, exist_ok=True)
+
+# combined_base = desktop / "spotify3theme_review_scrape"
+# theme_file_map = {
+#     "discovery": desktop / "new discovery",
+#     "playlist": desktop / "new playlist",
+#     "repetitive": desktop / "newrepetitive",
+# }
+
+# recommendation_exclude_keywords = [
+#     "recommendation",
+#     "recommend",
+#     "recommended",
+#     "algorithm",
+#     "suggestions",
+#     "suggested songs",
+# ]
+
+# theme_keywords = {
+#     "discovery": [
+#         "discover",
+#         "discovery",
+#         "find new music",
+#         "new songs",
+#         "explore music",
+#         "hidden gems",
+#     ],
+#     "playlist": [
+#         "discover weekly",
+#         "daily mix",
+#         "release radar",
+#         "ai dj",
+#         "smart shuffle",
+#         "radio",
+#         "autoplay",
+#         "made for you",
+#     ],
+#     "repetitive": [
+#         "same songs",
+#         "same artists",
+#         "repetitive",
+#         "repeats",
+#         "stuck",
+#         "plays the same music",
+#     ],
+# }
+
+# all_seen_review_ids = set()
+# theme_seen_review_ids = {
+#     "discovery": set(),
+#     "playlist": set(),
+#     "repetitive": set(),
+# }
+# theme_data = {
+#     "discovery": [],
+#     "playlist": [],
+#     "repetitive": [],
+# }
+# total_new_since_last_save = 0
+# stopped = False
+
+
+# def normalize_text(text):
+#     if text is None:
+#         return ""
+#     text = str(text).lower().strip()
+#     text = re.sub(r"\s+", " ", text)
+#     return text
+
+
+# def contains_any_keyword(text, keywords):
+#     return any(k in text for k in keywords)
+
+
+# def classify_review(text):
+#     text = normalize_text(text)
+
+#     if not text:
+#         return []
+
+#     if contains_any_keyword(text, recommendation_exclude_keywords):
+#         return []
+
+#     matched_themes = []
+#     for theme, keywords in theme_keywords.items():
+#         if contains_any_keyword(text, keywords):
+#             matched_themes.append(theme)
+
+#     return matched_themes
+
+
+# def review_to_record(review, matched_theme):
+#     return {
+#         "theme": matched_theme,
+#         "reviewId": review.get("reviewId") or review.get("reviewId", ""),
+#         "userName": review.get("userName"),
+#         "score": review.get("score"),
+#         "content": review.get("content"),
+#         "at": review.get("at"),
+#         "thumbsUpCount": review.get("thumbsUpCount"),
+#         "reviewCreatedVersion": review.get("reviewCreatedVersion"),
+#         "replyContent": review.get("replyContent"),
+#         "repliedAt": review.get("repliedAt"),
+#         "appId": APP_ID,
+#         "lang": LANG,
+#         "country": COUNTRY,
+#         "collectedAt": datetime.utcnow().isoformat(),
+#     }
+
+
+# def write_csv_json(df, base_path_without_ext):
+#     csv_path = f"{base_path_without_ext}.csv"
+#     json_path = f"{base_path_without_ext}.json"
+#     df.to_csv(csv_path, index=False, encoding="utf-8-sig")
+#     df.to_json(json_path, orient="records", force_ascii=False, indent=2)
+
+
+# def save_all_progress(final=False):
+#     combined_records = (
+#         theme_data["discovery"] +
+#         theme_data["playlist"] +
+#         theme_data["repetitive"]
+#     )
+
+#     combined_df = pd.DataFrame(combined_records)
+#     if not combined_df.empty:
+#         combined_df = combined_df.drop_duplicates(subset=["theme", "reviewId"])
+#         write_csv_json(combined_df, str(combined_base))
+
+#     for theme, records in theme_data.items():
+#         if records:
+#             df = pd.DataFrame(records).drop_duplicates(subset=["reviewId"])
+#             write_csv_json(df, str(theme_file_map[theme]))
+
+#     stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+#     status_path = desktop / "spotify3theme_review_scrape_status.txt"
+#     with open(status_path, "w", encoding="utf-8") as f:
+#         f.write(f"Last saved: {stamp}\n")
+#         f.write(f"Final save: {final}\n")
+#         for theme in ["discovery", "playlist", "repetitive"]:
+#             f.write(f"{theme}: {len(theme_data[theme])}\n")
+
+
+# def handle_exit(signum=None, frame=None):
+#     global stopped
+#     if stopped:
+#         return
+#     stopped = True
+#     print("\nStopping... saving all collected data before exit.")
+#     save_all_progress(final=True)
+#     raise SystemExit(0)
+
+
+# signal.signal(signal.SIGINT, handle_exit)
+# signal.signal(signal.SIGTERM, handle_exit)
+
+# if hasattr(signal, "SIGBREAK"):
+#     signal.signal(signal.SIGBREAK, handle_exit)
+
+
+# def target_reached():
+#     return all(len(theme_data[t]) >= TARGET_PER_THEME for t in theme_data)
+
+
+# def theme_full(theme):
+#     return len(theme_data[theme]) >= TARGET_PER_THEME
+
+
+# def try_add_review(review):
+#     global total_new_since_last_save
+
+#     review_id = review.get("reviewId")
+#     content = review.get("content", "")
+#     if not review_id or not content:
+#         return
+
+#     matched_themes = classify_review(content)
+#     if not matched_themes:
+#         return
+
+#     all_seen_review_ids.add(review_id)
+
+#     added_any = False
+#     for theme in matched_themes:
+#         if theme_full(theme):
+#             continue
+#         if review_id in theme_seen_review_ids[theme]:
+#             continue
+
+#         record = review_to_record(review, theme)
+#         theme_data[theme].append(record)
+#         theme_seen_review_ids[theme].add(review_id)
+#         total_new_since_last_save += 1
+#         added_any = True
+
+#         if len(theme_data[theme]) == TARGET_PER_THEME:
+#             df = pd.DataFrame(theme_data[theme]).drop_duplicates(subset=["reviewId"])
+#             write_csv_json(df, str(theme_file_map[theme]))
+#             print(f"Saved completed theme file for: {theme}")
+
+#     if added_any:
+#         print(
+#             f"Counts => discovery: {len(theme_data['discovery'])}, "
+#             f"playlist: {len(theme_data['playlist'])}, "
+#             f"repetitive: {len(theme_data['repetitive'])}"
+#         )
+
+
+# def main():
+#     global total_new_since_last_save
+
+#     token = None
+#     pages = 0
+#     no_progress_rounds = 0
+
+#     try:
+#         while not target_reached():
+#             result, token = reviews(
+#                 APP_ID,
+#                 lang=LANG,
+#                 country=COUNTRY,
+#                 sort=Sort.NEWEST,
+#                 count=BATCH_SIZE,
+#                 continuation_token=token,
+#             )
+
+#             pages += 1
+#             before_total = sum(len(v) for v in theme_data.values())
+
+#             if not result:
+#                 print("No more reviews returned by Play Store.")
+#                 break
+
+#             for review in result:
+#                 try_add_review(review)
+
+#             after_total = sum(len(v) for v in theme_data.values())
+
+#             if after_total == before_total:
+#                 no_progress_rounds += 1
+#             else:
+#                 no_progress_rounds = 0
+
+#             if total_new_since_last_save >= SAVE_EVERY:
+#                 print(f"Autosaving after {total_new_since_last_save} new collected theme-review rows...")
+#                 save_all_progress(final=False)
+#                 total_new_since_last_save = 0
+
+#             if token is None:
+#                 print("No continuation token left. Reached available end.")
+#                 break
+
+#             if no_progress_rounds >= 20:
+#                 print("No useful new matches found for many pages. Saving current results and stopping.")
+#                 break
+
+#             time.sleep(1.2)
+
+#     except KeyboardInterrupt:
+#         handle_exit()
+#     except Exception as e:
+#         print(f"Unexpected error: {e}")
+#         save_all_progress(final=True)
+#         raise
+#     finally:
+#         save_all_progress(final=True)
+#         print("Done. All collected data saved.")
+
+
+# if __name__ == "__main__":
+#     main()
+
+
+
+
+
+import appstorescraper
+
+app = appstorescraper.get_app(app_id="324684580", country="us")
+reviews = app.get_reviews(count=3, offset=0)
+
+print(type(reviews))
+print(len(reviews))
+print(reviews[0])

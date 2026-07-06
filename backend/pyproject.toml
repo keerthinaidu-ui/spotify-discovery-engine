@@ -1,0 +1,9 @@
+[project]
+name = "spotify-review-engine"
+version = "0.1.0"
+description = "AI-powered review discovery engine for Spotify user feedback"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

@@ -1,0 +1,136 @@
+.insightsCard {
+  background-color: var(--color-surface-container);
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(62, 62, 62, 0.1);
+  overflow: hidden;
+  margin-bottom: var(--space-gutter);
+}
+
+.insightsHeader {
+  padding: var(--space-md);
+  border-bottom: 1px solid rgba(62, 62, 62, 0.1);
+  background: rgba(29, 185, 84, 0.05); /* bg-primary-container/5 */
+}
+
+.insightsTitle {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+  color: var(--color-primary-fixed);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.insightsIcon {
+  font-size: 18px;
+}
+
+.insightsList {
+  padding: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.insightBlock {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.insightTag {
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 900;
+  margin-bottom: 2px;
+}
+
+.tagPainPoints {
+  color: var(--color-primary-fixed);
+}
+
+.tagUnmetNeeds {
+  color: var(--color-tertiary-fixed-dim);
+}
+
+.tagPersonas {
+  color: var(--color-secondary-fixed);
+}
+
+.insightText {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--color-on-surface);
+  transition: color 0.15s ease;
+}
+
+.insightBlock:hover .insightText {
+  color: var(--color-primary-fixed);
+}
+
+/* Loop Causes Card styles */
+.loopCausesCard {
+  background-color: var(--color-surface-container);
+  padding: var(--space-md);
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(62, 62, 62, 0.1);
+}
+
+.loopCausesTitle {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+  color: var(--color-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: var(--space-md);
+}
+
+.loopList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.loopItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.loopHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+}
+
+.loopTrack {
+  width: 100%;
+  height: 4px;
+  background-color: var(--color-surface-container-highest);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.loopBar {
+  height: 100%;
+  border-radius: var(--radius-full);
+}
+
+.loopBarAlgo {
+  background-color: var(--color-primary-fixed);
+}
+
+.loopBarUI {
+  background-color: var(--color-secondary);
+}
+
+.loopBarPodcast {
+  background-color: var(--color-error);
+}

@@ -1,0 +1,87 @@
+.card {
+  background-color: var(--color-surface-container);
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(62, 62, 62, 0.1);
+  overflow: hidden;
+}
+
+.headerRow {
+  padding: var(--space-md);
+  border-bottom: 1px solid rgba(62, 62, 62, 0.1);
+}
+
+.title {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+  color: var(--color-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.tableHead {
+  background-color: var(--color-surface-container-high);
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--color-secondary);
+}
+
+.th {
+  padding: var(--space-md);
+}
+
+.row {
+  border-bottom: 1px solid rgba(62, 62, 62, 0.05);
+  transition: background-color 0.15s ease;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row:hover {
+  background-color: var(--color-surface-container-highest);
+}
+
+.td {
+  padding: var(--space-md);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-on-surface);
+}
+
+.categoryCell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-weight: 700;
+}
+
+.cellIcon {
+  font-size: 18px;
+}
+
+.valueCell {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.valueCell:hover {
+  background-color: rgba(114, 254, 143, 0.1) !important;
+}
+
+.valueCell:active {
+  transform: scale(0.98);
+}

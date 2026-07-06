@@ -1,0 +1,10 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+sqlalchemy>=2.0.0
+alembic>=1.14.0
+pydantic>=2.0.0
+pydantic-settings>=2.6.0
+python-dotenv>=1.0.0
+# PostgreSQL driver (use psycopg2-binary in local dev if compilation fails)
+psycopg2>=2.9.0
+
