@@ -63,6 +63,8 @@ export interface KPIData {
   totalAnalyzed: number
   negativeCount: number
   positiveCount: number
+  neutralCount: number
+  unclearCount: number
   topCategoryName: IssueCategory | string
   topCategoryCount: number
   isAnalyzing?: boolean
