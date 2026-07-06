@@ -2,7 +2,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Sonic Analytics | Discovery Overview',
+  title: 'Spotify AI Review Discovery Engine | Discovery Overview',
   description: 'AI-Powered Feedback Dashboard',
 }
 

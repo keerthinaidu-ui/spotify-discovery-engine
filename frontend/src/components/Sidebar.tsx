@@ -105,7 +105,7 @@ export default function Sidebar({
       >
         <div className={styles.brandHeader}>
           <div>
-            <h1 className={styles.brandTitle}>Sonic Analytics</h1>
+            <h1 className={styles.brandTitle}>Spotify AI Review Discovery Engine</h1>
             <p className={styles.brandSubtitle}>Feedback Dashboard</p>
           </div>
           <button
